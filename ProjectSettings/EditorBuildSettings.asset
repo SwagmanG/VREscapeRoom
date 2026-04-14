@@ -6,8 +6,14 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/Scenes/SampleScene.unity
-    guid: 99c9720ab356a0642a771bea13969a05
+    path: Assets/CameronsFOlder/Start Game.unity
+    guid: 457c9c8d877a31846bca177375d83e2e
+  - enabled: 1
+    path: Assets/CameronsFOlder/New Scene.unity
+    guid: 9886b850fdae24e48a2df01c78f705e5
+  - enabled: 1
+    path: Assets/CameronsFOlder/Game Over.unity
+    guid: 99c127dc28d97e0429df1247a4d69d28
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
     com.unity.xr.management.loader_settings: {fileID: 11400000, guid: 19029bc2f62e11e43aedfc3b73d46f2c, type: 2}
