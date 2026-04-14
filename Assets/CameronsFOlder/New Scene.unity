@@ -14949,7 +14949,8 @@ MonoBehaviour:
   pokeButton: {fileID: 975747533}
   audioSource: {fileID: 296164649}
   cannonSound: {fileID: 8300000, guid: 2982de35de275a245b91a801bbd80f8f, type: 3}
-  fadeDuration: 1.5
+  sceneToLoad: Game Over
+  delayBeforeLoad: 1.5
 --- !u!1 &1940482700
 GameObject:
   m_ObjectHideFlags: 0
