@@ -13,10 +13,10 @@ public class ButtonSequenceLock : MonoBehaviour
 
     [Header("Audio")]
     public AudioSource audioSource;
-    public AudioClip successSound;
+    public AudioClip correctButtonSound;  // plays each time a correct button is pressed
+    public AudioClip successSound;        // plays when ALL buttons are correct
+    public AudioClip wrongSound;          // plays on any wrong press
 
-    // The correct order, 0 = first button that should be pressed
-    // Assign these in inspector by dragging the PokeInteractables
     [Header("Correct Sequence")]
     public PokeInteractable button0;
     public PokeInteractable button1;
@@ -27,46 +27,26 @@ public class ButtonSequenceLock : MonoBehaviour
     private List<int> correctOrder;
     private List<int> playerInput = new List<int>();
     private bool sequenceSolved = false;
+    private bool isResetting = false;
 
     private float lastPressTime = -1f;
     private float pressCooldown = 0.4f;
 
     private void Start()
     {
-        // Build the correct order list from the assigned buttons
-        // The ORDER you assign them (0,1,2,3) IS the correct sequence
         correctOrder = new List<int> { 0, 1, 2, 3 };
     }
 
-    // --- These get called by InteractableUnityEventWrapper on each button ---
-
-    public void OnButton0Pressed()
-    {
-        RegisterPress(0);
-    }
-
-    public void OnButton1Pressed()
-    {
-        RegisterPress(1);
-    }
-
-    public void OnButton2Pressed()
-    {
-        RegisterPress(2);
-    }
-
-    public void OnButton3Pressed()
-    {
-        RegisterPress(3);
-    }
-
-    // --------------------------------------------------------
+    public void OnButton0Pressed() { RegisterPress(0); }
+    public void OnButton1Pressed() { RegisterPress(1); }
+    public void OnButton2Pressed() { RegisterPress(2); }
+    public void OnButton3Pressed() { RegisterPress(3); }
 
     private void RegisterPress(int buttonIndex)
     {
         if (sequenceSolved) return;
+        if (isResetting) return;
 
-        // Cooldown to prevent double-firing
         if (Time.time - lastPressTime < pressCooldown) return;
         lastPressTime = Time.time;
 
@@ -76,28 +56,51 @@ public class ButtonSequenceLock : MonoBehaviour
 
         int step = playerInput.Count - 1;
 
+        // Wrong button
         if (playerInput[step] != correctOrder[step])
         {
-            Debug.Log("Wrong order! Resetting.");
-            playerInput.Clear();
+            Debug.Log("Wrong button! Resetting immediately.");
+            PlaySound(wrongSound);
+            StartCoroutine(ResetAfterWrong());
             return;
         }
 
+        // Correct button pressed — check if it's the last one
         if (playerInput.Count == correctOrder.Count)
         {
+            // All buttons correct — play success sound
             sequenceSolved = true;
             Debug.Log("Sequence complete!");
+            PlaySound(successSound);
             TriggerSuccess();
         }
+        else
+        {
+            // Correct button but not finished yet — play the per-button correct sound
+            Debug.Log($"Correct! {playerInput.Count} of {correctOrder.Count} done.");
+            PlaySound(correctButtonSound);
+        }
+    }
+
+    private void PlaySound(AudioClip clip)
+    {
+        if (audioSource != null && clip != null)
+            audioSource.PlayOneShot(clip);
+    }
+
+    private System.Collections.IEnumerator ResetAfterWrong()
+    {
+        isResetting = true;
+        playerInput.Clear();
+        yield return new WaitForSeconds(0.1f);
+        isResetting = false;
+        Debug.Log("Ready for new input.");
     }
 
     private void TriggerSuccess()
     {
         if (objectToDisable != null)
             objectToDisable.SetActive(false);
-
-        if (audioSource != null && successSound != null)
-            audioSource.PlayOneShot(successSound);
 
         if (cannon != null && cannonSpawnPoint != null)
         {
@@ -111,5 +114,6 @@ public class ButtonSequenceLock : MonoBehaviour
     {
         playerInput.Clear();
         sequenceSolved = false;
+        isResetting = false;
     }
 }
