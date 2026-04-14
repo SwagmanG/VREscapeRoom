@@ -4,88 +4,101 @@ using Oculus.Interaction;
 
 public class ButtonSequenceLock : MonoBehaviour
 {
-    [Header("Sequence Setup")]
-    [Tooltip("Drag your 4 PokeInteractable buttons here IN THE CORRECT ORDER they must be pressed")]
-    public List<PokeInteractable> correctSequence = new List<PokeInteractable>();
-
     [Header("Cannon Setup")]
-    [Tooltip("The cannon GameObject to move")]
     public GameObject cannon;
-    [Tooltip("The spawn point Transform in the NEW room")]
     public Transform cannonSpawnPoint;
 
     [Header("Object to Disable")]
-    [Tooltip("The GameObject that gets disabled when sequence is complete")]
     public GameObject objectToDisable;
 
     [Header("Audio")]
     public AudioSource audioSource;
     public AudioClip successSound;
 
+    // The correct order, 0 = first button that should be pressed
+    // Assign these in inspector by dragging the PokeInteractables
+    [Header("Correct Sequence")]
+    public PokeInteractable button0;
+    public PokeInteractable button1;
+    public PokeInteractable button2;
+    public PokeInteractable button3;
+
     // --- Private State ---
-    private List<PokeInteractable> playerInput = new List<PokeInteractable>();
+    private List<int> correctOrder;
+    private List<int> playerInput = new List<int>();
     private bool sequenceSolved = false;
+
+    private float lastPressTime = -1f;
+    private float pressCooldown = 0.4f;
 
     private void Start()
     {
-        foreach (PokeInteractable button in correctSequence)
-        {
-            if (button != null)
-            {
-                PokeInteractable localRef = button;
-                button.WhenSelectingInteractorViewAdded += (_) => OnButtonPressed(localRef);
-            }
-        }
+        // Build the correct order list from the assigned buttons
+        // The ORDER you assign them (0,1,2,3) IS the correct sequence
+        correctOrder = new List<int> { 0, 1, 2, 3 };
     }
 
-    private void OnDestroy()
+    // --- These get called by InteractableUnityEventWrapper on each button ---
+
+    public void OnButton0Pressed()
     {
-        foreach (PokeInteractable button in correctSequence)
-        {
-            if (button != null)
-            {
-                PokeInteractable localRef = button;
-                button.WhenSelectingInteractorViewAdded -= (_) => OnButtonPressed(localRef);
-            }
-        }
+        RegisterPress(0);
     }
 
-    private void OnButtonPressed(PokeInteractable pressedButton)
+    public void OnButton1Pressed()
+    {
+        RegisterPress(1);
+    }
+
+    public void OnButton2Pressed()
+    {
+        RegisterPress(2);
+    }
+
+    public void OnButton3Pressed()
+    {
+        RegisterPress(3);
+    }
+
+    // --------------------------------------------------------
+
+    private void RegisterPress(int buttonIndex)
     {
         if (sequenceSolved) return;
 
-        playerInput.Add(pressedButton);
+        // Cooldown to prevent double-firing
+        if (Time.time - lastPressTime < pressCooldown) return;
+        lastPressTime = Time.time;
+
+        Debug.Log($"Button {buttonIndex} pressed. Step {playerInput.Count + 1} of {correctOrder.Count}");
+
+        playerInput.Add(buttonIndex);
 
         int step = playerInput.Count - 1;
 
-        // Wrong button — reset
-        if (playerInput[step] != correctSequence[step])
+        if (playerInput[step] != correctOrder[step])
         {
-            Debug.Log("Wrong order! Resetting sequence.");
+            Debug.Log("Wrong order! Resetting.");
             playerInput.Clear();
             return;
         }
 
-        // Correct so far — check if complete
-        if (playerInput.Count == correctSequence.Count)
+        if (playerInput.Count == correctOrder.Count)
         {
             sequenceSolved = true;
-            Debug.Log("Correct sequence! Triggering effects.");
+            Debug.Log("Sequence complete!");
             TriggerSuccess();
         }
     }
 
     private void TriggerSuccess()
     {
-        // 1. Disable target object
         if (objectToDisable != null)
             objectToDisable.SetActive(false);
 
-        // 2. Play success sound
         if (audioSource != null && successSound != null)
             audioSource.PlayOneShot(successSound);
 
-        // 3. Teleport cannon to new room
         if (cannon != null && cannonSpawnPoint != null)
         {
             cannon.transform.position = cannonSpawnPoint.position;
